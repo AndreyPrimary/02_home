@@ -17,6 +17,11 @@ jobs:
       - run: cmake --build .
       - run: cmake --build . --target test
       - run: cmake --build . --target package
+
+      #- name: Get asset name
+      #  id: get_asset_name
+      #  run: echo "::set-output name=assert_name::$(ls dist | grep gz)"
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
