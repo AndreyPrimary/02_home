@@ -1,53 +1,164 @@
 #include "lib.h"
 
+#define LOG_ALLOC
+
 #include <iostream>
 // #include <fstream>
 // #include <sstream>
-// #include <map>
-// #include <vector>
+#include <map>
+#include <vector>
 // #include <iterator>
 // #include <algorithm>
 
+#include "myprettyallocator.h"
 
-// using file_text = std::vector<std::string>;
-// using ip_address = std::string;
-// using ip_key = uint64_t;
-// using ip_vector = std::vector<uint8_t>;
-// using ip_list = std::multimap<ip_key, ip_address>;
 
-/*
-template<char delimiter>
-class StringDelimiter : public std::string
-{};
-
-std::vector<std::string> splitLine(const std::string& text)
+template <int N>
+struct Factorial 
 {
-    std::istringstream iss(text);
+    enum { value = N * Factorial<N - 1>::value };
+};
 
-    std::vector<std::string> results((std::istream_iterator<StringDelimiter<'\t'>>(iss)),
-        std::istream_iterator<StringDelimiter<'\t'>>());
-
-    return results;
-}
-
-std::vector<std::string> splitIp(const ip_address& ip)
+template <>
+struct Factorial<0> 
 {
-    std::string ip_val;
-    std::istringstream iss(ip);
+    enum { value = 1 };
+};
 
-    std::vector<std::string> result;
 
-    while (std::getline(iss, ip_val, '.')) {
-        result.push_back(ip_val);
+class A1 
+{
+public:
+
+    struct some_struct
+    {
+        int i;
+        char ch[3];
+    };
+};
+
+
+void testCommon()
+{
+    std::vector<A1::some_struct, std::allocator<A1::some_struct>> v1;
+
+    v1.reserve(100);
+
+    std::vector<int, MyPrettyAllocator<int>> myAllocVector;
+
+    myAllocVector.push_back(1);
+
+    for (const auto val : myAllocVector) {
+        std::cout << val << std::endl;
     }
 
-    return result;
+    std::map<int, std::string, std::less<int>, MyPrettyAllocator<std::pair<const int, std::string>> > myAllocMap;
+
+    for (int n = 0; n < 10; n++) {
+        myAllocMap[n] = std::string("Line") + std::to_string(n);
+    }
+
+    for (const auto &val : myAllocMap) {
+        std::cout << val.first << "|" << val.second << std::endl;
+    }
+
 }
-*/
+
+void testAllocOutOfMaxSize()
+{
+    std::cout << "std::vector<int, MyPrettyAllocator<int> > out of max size" << std::endl;
+
+    std::vector<int, MyPrettyAllocator<int> > myAllocVector;
+    int                 fact = 1;
+
+    myAllocVector.reserve(10);
+
+    for (int n = 0; n < 11; n++) {
+        fact = fact * (n + 1);
+        myAllocVector.push_back(fact);
+    }
+
+    for (const auto &val : myAllocVector) {
+        std::cout << val << std::endl;
+    }
+}
+
+// -создание экземпляра std::map<int, int>
+// -заполнение 10 элементами, где ключ-это число от 0 до 9, а значение -факториал ключа
+void testStdMap()
+{
+    std::cout << "std::map<int, int>" << std::endl;
+
+    std::map<int, int>  stdMap;
+    int                 fact = 1;
+
+    for (int n = 0; n < 10; n++) {
+        fact = fact * (n + 1);
+        stdMap[n] = fact;
+    }
+
+    for (const auto &val : stdMap) {
+        std::cout << val.first << " " << val.second << std::endl;
+    }
+}
+
+// -создание  экземпляра std::map<int,  int>с  новым  аллокатором,ограниченным10 элементами
+// -заполнение 10 элементами, где ключ-это число от 0 до 9, а значение -факториал ключа
+// -вывод на экран всех значений (ключ и значение разделены пробелом) хранящихся в контейнере
+void testAllocMap()
+{
+    std::cout << "std::map<int, int, std::less<int>, MyPrettyAllocator<std::pair<const int, int>> >" << std::endl;
+
+    std::map<int, int, std::less<int>, MyPrettyAllocator<std::pair<const int, int>> > myAllocMap;
+    int                 fact = 1;
+
+    for (int n = 0; n < 10; n++) {
+        fact = fact * (n + 1);
+        myAllocMap[n] = fact;
+    }
+
+    for (const auto &val : myAllocMap) {
+        std::cout << val.first << " " << val.second << std::endl;
+    }
+}
+
+void testAllocVectorWithReserv()
+{
+    std::cout << "std::vector<int, MyPrettyAllocator<int> > with reserve" << std::endl;
+
+    std::vector<int, MyPrettyAllocator<int> > myAllocVector;
+    int                 fact = 1;
+
+    myAllocVector.reserve(10);
+
+    for (int n = 0; n < 10; n++) {
+        fact = fact * (n + 1);
+        myAllocVector.push_back(fact);
+    }
+
+    for (const auto &val : myAllocVector) {
+        std::cout << val << std::endl;
+    }
+}
+
+// -создание экземпляра своего контейнера для хранения значений типа int
+// -заполнение 10 элементами от 0 до 9
+
+// -создание экземпляра своего контейнера для хранения значений типа int с новым аллокатором,ограниченным 10 элементами
+// -заполнение 10 элементами от 0 до 9
+// -вывод на экран всех значений,хранящихся в контейнере
 
 int main (int, char **)
 {
+    
     std::cout << "Allocator Version: " << version() << std::endl;
+
+    // testCommon();
+    // testAllocOutOfMaxSize(); // должна быть ошибка
+
+    testStdMap();
+    testAllocMap();
+    testAllocVectorWithReserv();
 
     return 0;
 }
