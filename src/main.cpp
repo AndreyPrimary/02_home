@@ -1,6 +1,7 @@
 #include "lib.h"
 
 #define LOG_ALLOC
+#define LOG_LIST
 
 #include <iostream>
 // #include <fstream>
@@ -11,6 +12,7 @@
 // #include <algorithm>
 
 #include "myprettyallocator.h"
+#include "myprettylist.h"
 
 
 template <int N>
@@ -63,6 +65,20 @@ void testCommon()
     }
 
 }
+
+void testCommonList()
+{
+    MyPrettyList<int> myList;
+
+    myList.push_back(1);
+    myList.push_back(2);
+    myList.push_back(3);
+
+    for (const auto val : myList) {
+        std::cout << val << std::endl;
+    }
+}
+
 
 void testAllocOutOfMaxSize()
 {
@@ -154,11 +170,12 @@ int main (int, char **)
     std::cout << "Allocator Version: " << version() << std::endl;
 
     // testCommon();
+    testCommonList();
     // testAllocOutOfMaxSize(); // должна быть ошибка
 
-    testStdMap();
-    testAllocMap();
-    testAllocVectorWithReserv();
+    // testStdMap();
+    // testAllocMap();
+    // testAllocVectorWithReserv();
 
     return 0;
 }

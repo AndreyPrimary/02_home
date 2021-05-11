@@ -12,7 +12,7 @@ find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
 configure_file(version.h.in src/version.h)
 
-add_executable(${PROGRAM_NAME} src/main.cpp src/myprettyallocator.cpp src/myprettyallocator.h)
+add_executable(${PROGRAM_NAME} src/main.cpp src/myprettyallocator.cpp src/myprettyallocator.h src/myprettylist.h)
 add_library(${PROGRAM_NAME}_lib src/lib.cpp)
 add_executable(test_version src/test_version.cpp)
 
