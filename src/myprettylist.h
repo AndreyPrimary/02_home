@@ -5,7 +5,8 @@
 
 template <typename T>
 struct node {
-  T data;
+//   T data;
+  T* data;
   node *next;
 };
 
@@ -15,8 +16,9 @@ class MyPrettyList {
 public:    
     using value_type = T;
     using size_type = size_t;
+    using allocator_type = Allocator;
 
-    MyPrettyList() : head(nullptr), tail(nullptr) 
+    MyPrettyList() : head(nullptr)//, tail(nullptr) 
     {
 #ifdef LOG_LIST
         std::cout << "constructor MyPrettyList" << std::endl;
@@ -33,6 +35,8 @@ public:
         while(head) {
             tmp = head;
             head = head->next;
+            alloc.destroy(tmp->data);
+            alloc.deallocate (tmp->data, 1);
             delete tmp;
         }
     }
@@ -41,10 +45,13 @@ public:
     void push_back(T const& item)
     {
         node<T> *n = new node<T>();   
-        n->data = item;
+        n->data = alloc.allocate(1);
+        alloc.construct(n->data, item);
+
+        // n->data = item;
         n->next = nullptr;
 
-        tail = n;
+        // tail = n;
 
         node<T>* last = head;
 
@@ -60,9 +67,6 @@ public:
 
     // iterator
     
-    // using iterator = node<T>*;
-    // using const_iterator = const node<T>*;
-
     template < bool CONST > struct iterator_impl ;
 
     using iterator = iterator_impl<false>;
@@ -75,69 +79,11 @@ public:
     const_iterator cbegin() const { return begin() ; }
     const_iterator cend() const { return end() ; }
 
-    /*
-    iterator begin() 
-    {
-#ifdef LOG_LIST
-        std::string st = "nullptr";
-        if (head) {
-            st = std::to_string(head->data);
-        }
-        std::cout << "iterator begin() data = " << st << std::endl;
-#endif 
-        return head;
-    }
-    const_iterator begin() const 
-    {
-#ifdef LOG_LIST
-        std::string st = "nullptr";
-        if (head) {
-            st = std::to_string(head->data);
-        }
-        std::cout << "const iterator begin() data = " << st << std::endl;
-#endif 
-        return head;
-    }
-
-    iterator end() 
-    {
-#ifdef LOG_LIST
-        std::string st = "nullptr";
-        if (tail) {
-            st = std::to_string(tail->data);
-        }
-        std::cout << "iterator end() data = " << st << std::endl;
-#endif 
-        return tail->next;
-    }
-    const_iterator end() const 
-    {
-#ifdef LOG_LIST
-        std::string st = "nullptr";
-        if (tail) {
-            st = std::to_string(tail->data);
-        }
-        std::cout << "const iterator end() data = " << st << std::endl;
-#endif 
-        return tail->next;
-    }
-    */
-private:
-    /*
-    struct node {
-        value_type val;
-        node *next;
-
-        node(T const& val, node* next) : val(val), next(next) {}
-
-        node(T&& val, node* next) : val(val), next(next) {}
-    };
-    */
     node<T> *head = nullptr;
-    node<T> *tail = nullptr;
+    // node<T> *tail = nullptr;
 
     //Memory management
-    // std::allocator<T> alloc;
+    allocator_type alloc;
 
 public:
 
@@ -147,7 +93,7 @@ public:
 
             explicit iterator_impl( node<T>* n ) : curr(n) {}
 
-            value_type& operator* () { return /*curr->value*/ curr->data ; }
+            value_type& operator* () { return /*curr->value*/ *curr->data ; }
             value_type& operator-> () { return std::addressof(**this) ; }
 
             iterator_impl& operator++ () { curr = curr->next ; return *this ; }
@@ -170,31 +116,5 @@ public:
 
     
 
-// void push_back(T const& item);
 
-/*
-template <typename T,typename Allocator>
-MyPrettyList<T>::MyPrettyList() {
-}
 
-template <typename T,typename Allocator>
-MyPrettyList<T>::~MyPrettyList() {
-    node* tmp;
-    while(head* != nullptr) {
-        tmp = head;
-        head = head->next;
-        delete tmp;
-    }
-}
-*/
-/*
-template <typename T>
-MyPrettyList <T>::~MyPrettyList() {
-    node* tmp;
-    while(head) {
-        tmp = head;
-        head = head->next;
-        delete tmp;
-    }
-}
-*/

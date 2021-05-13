@@ -159,10 +159,42 @@ void testAllocVectorWithReserv()
 
 // -создание экземпляра своего контейнера для хранения значений типа int
 // -заполнение 10 элементами от 0 до 9
+void testPrettyList()
+{
+    std::cout << "MyPrettyList<int>" << std::endl;
+
+    MyPrettyList<int> myAllocList;
+    int                 fact = 1;
+
+    for (int n = 0; n < 10; n++) {
+        fact = fact * (n + 1);
+        myAllocList.push_back(fact);
+    }
+
+    for (const auto &val : myAllocList) {
+        std::cout << val << std::endl;
+    }
+}
 
 // -создание экземпляра своего контейнера для хранения значений типа int с новым аллокатором,ограниченным 10 элементами
 // -заполнение 10 элементами от 0 до 9
 // -вывод на экран всех значений,хранящихся в контейнере
+void testAllocPrettyList()
+{
+    std::cout << "MyPrettyList<int, MyPrettyAllocator<int> >" << std::endl;
+
+    MyPrettyList<int, MyPrettyAllocator<int> > myAllocMap;
+    int                 fact = 1;
+
+    for (int n = 0; n < 10; n++) {
+        fact = fact * (n + 1);
+        myAllocMap.push_back(fact);
+    }
+
+    for (const auto &val : myAllocMap) {
+        std::cout << val << std::endl;
+    }
+}
 
 int main (int, char **)
 {
@@ -170,12 +202,14 @@ int main (int, char **)
     std::cout << "Allocator Version: " << version() << std::endl;
 
     // testCommon();
-    testCommonList();
+    // testCommonList();
     // testAllocOutOfMaxSize(); // должна быть ошибка
 
-    // testStdMap();
-    // testAllocMap();
-    // testAllocVectorWithReserv();
+    testStdMap();
+    testAllocMap();
+    testAllocVectorWithReserv();
+    testPrettyList();
+    testAllocPrettyList();
 
     return 0;
 }
