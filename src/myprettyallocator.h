@@ -6,6 +6,10 @@
 template <typename T>
 struct MyPrettyAllocator {
   using value_type = T;
+  std::size_t allocated_size;
+  std::size_t used_size;
+  std::size_t reserv_size;
+  char* pMemory;
 
   MyPrettyAllocator() noexcept;
 
@@ -32,13 +36,14 @@ constexpr bool operator!= (const MyPrettyAllocator<T>&, const MyPrettyAllocator<
 // ----------------------
 
 template <typename T>
-MyPrettyAllocator<T>::MyPrettyAllocator() noexcept {
+MyPrettyAllocator<T>::MyPrettyAllocator() noexcept 
+    : allocated_size(0), used_size(0), reserv_size(5), pMemory(nullptr) {
 }
 
 template <typename T>
 template <typename U>
-MyPrettyAllocator<T>::MyPrettyAllocator(const MyPrettyAllocator<U>& ) noexcept {
-
+MyPrettyAllocator<T>::MyPrettyAllocator(const MyPrettyAllocator<U>& ) noexcept 
+    : allocated_size(0), used_size(0), reserv_size(5), pMemory(nullptr) {
 }
 
 template <typename T>
@@ -56,22 +61,55 @@ T* MyPrettyAllocator<T>::allocate (std::size_t n) {
     #endif
 #endif
 
-	auto p = std::malloc(n * sizeof(T));
-	if (!p)
-		throw std::bad_alloc();
+    if (allocated_size == 0) {
+#ifdef LOG_ALLOC    
+    #ifndef USE_PRETTY
+            std::cout << "malloc memory element: [" << max_size() << "]" << std::endl;
+    #else
+            std::cout << __PRETTY_FUNCTION__ << "malloc memory element: [" << max_size() << "]"  std::endl;
+    #endif
+#endif
+        pMemory = reinterpret_cast<char*> (std::malloc(max_size() * sizeof(T))); 
+
+        if (!pMemory)
+            throw std::bad_alloc();
+    }
+
+    auto p = pMemory + allocated_size * sizeof(T);
+    allocated_size += n;
+
+    if (allocated_size > max_size()) {
+        throw std::bad_alloc();        
+    }
+
+	// auto p = std::malloc(n * sizeof(T));
+	// if (!p)
+	// 	throw std::bad_alloc();
+
 	return reinterpret_cast<T *>(p);
 }
 
 template <typename T>
-void MyPrettyAllocator<T>::deallocate (T* p, [[maybe_unused]] std::size_t n) {
+void MyPrettyAllocator<T>::deallocate ([[maybe_unused]] T* p, [[maybe_unused]] std::size_t n) {
 #ifdef LOG_ALLOC
     #ifndef USE_PRETTY
             std::cout << "deallocate: [n  = " << n << "] " << std::endl;
     #else
             std::cout << __PRETTY_FUNCTION__ << "[n = " << n << "]" << std::endl;
     #endif
-#endif    
-	std::free(p);
+#endif   
+    allocated_size -= n;
+
+    if (allocated_size <= 0) {
+#ifdef LOG_ALLOC    
+    #ifndef USE_PRETTY
+            std::cout << "free memory element: [" << max_size() << "]" << std::endl;
+    #else
+            std::cout << __PRETTY_FUNCTION__ << "free memory element: [" << max_size() << "]"  std::endl;
+    #endif
+#endif
+        std::free(pMemory);
+    }
 }
 
 template <typename T>
