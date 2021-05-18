@@ -7,11 +7,12 @@ template <typename T>
 struct MyPrettyAllocator {
   using value_type = T;
   std::size_t allocated_size;
-  std::size_t used_size;
   std::size_t reserv_size;
-  char* pMemory;
+  char* pMemory = nullptr;
 
-  MyPrettyAllocator() noexcept;
+  MyPrettyAllocator(std::size_t reserv_size = 10) noexcept;
+
+  ~MyPrettyAllocator();
 
   template <typename U> MyPrettyAllocator (const MyPrettyAllocator<U>&) noexcept;
 
@@ -36,19 +37,27 @@ constexpr bool operator!= (const MyPrettyAllocator<T>&, const MyPrettyAllocator<
 // ----------------------
 
 template <typename T>
-MyPrettyAllocator<T>::MyPrettyAllocator() noexcept 
-    : allocated_size(0), used_size(0), reserv_size(5), pMemory(nullptr) {
+MyPrettyAllocator<T>::MyPrettyAllocator(std::size_t reserv_size) noexcept 
+    : allocated_size(0), reserv_size(reserv_size) {
+}
+
+template <typename T>
+MyPrettyAllocator<T>::~MyPrettyAllocator() {
+    if (pMemory != nullptr) {
+        std::free(pMemory);
+        pMemory = nullptr;
+    }    
 }
 
 template <typename T>
 template <typename U>
 MyPrettyAllocator<T>::MyPrettyAllocator(const MyPrettyAllocator<U>& ) noexcept 
-    : allocated_size(0), used_size(0), reserv_size(5), pMemory(nullptr) {
+    : allocated_size(0) {
 }
 
 template <typename T>
 std::size_t MyPrettyAllocator<T>::max_size() const noexcept {
-    return 10;
+    return reserv_size;
 }
 
 template <typename T>
@@ -64,12 +73,12 @@ T* MyPrettyAllocator<T>::allocate (std::size_t n) {
     if (allocated_size == 0) {
 #ifdef LOG_ALLOC    
     #ifndef USE_PRETTY
-            std::cout << "malloc memory element: [" << max_size() << "]" << std::endl;
+            std::cout << "malloc memory element: [" << reserv_size << "]" << std::endl;
     #else
-            std::cout << __PRETTY_FUNCTION__ << "malloc memory element: [" << max_size() << "]"  std::endl;
+            std::cout << __PRETTY_FUNCTION__ << "malloc memory element: [" << reserv_size << "]"  std::endl;
     #endif
 #endif
-        pMemory = reinterpret_cast<char*> (std::malloc(max_size() * sizeof(T))); 
+        pMemory = reinterpret_cast<char*> (std::malloc(reserv_size * sizeof(T))); 
 
         if (!pMemory)
             throw std::bad_alloc();
@@ -78,7 +87,7 @@ T* MyPrettyAllocator<T>::allocate (std::size_t n) {
     auto p = pMemory + allocated_size * sizeof(T);
     allocated_size += n;
 
-    if (allocated_size > max_size()) {
+    if (allocated_size > reserv_size) {
         throw std::bad_alloc();        
     }
 
@@ -103,12 +112,13 @@ void MyPrettyAllocator<T>::deallocate ([[maybe_unused]] T* p, [[maybe_unused]] s
     if (allocated_size <= 0) {
 #ifdef LOG_ALLOC    
     #ifndef USE_PRETTY
-            std::cout << "free memory element: [" << max_size() << "]" << std::endl;
+            std::cout << "free memory element: [" << reserv_size << "]" << std::endl;
     #else
-            std::cout << __PRETTY_FUNCTION__ << "free memory element: [" << max_size() << "]"  std::endl;
+            std::cout << __PRETTY_FUNCTION__ << "free memory element: [" << reserv_size << "]"  std::endl;
     #endif
 #endif
         std::free(pMemory);
+        pMemory = nullptr;
     }
 }
 
