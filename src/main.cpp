@@ -99,6 +99,24 @@ void testAllocOutOfMaxSize()
     }
 }
 
+void testAllocPrettyListWith20AllocElement()
+{
+    std::cout << "MyPrettyList<int, MyPrettyAllocator<int, 20> >" << std::endl;
+
+    MyPrettyList<int, MyPrettyAllocator<int, 20> > myAllocMap;
+    int                 fact = 1;
+
+    for (int n = 0; n < 10; n++) {
+        fact = fact * (n + 1);
+        myAllocMap.push_back(fact);
+    }
+
+    for (const auto &val : myAllocMap) {
+        std::cout << val << std::endl;
+    }
+}
+
+
 // -создание экземпляра std::map<int, int>
 // -заполнение 10 элементами, где ключ-это число от 0 до 9, а значение -факториал ключа
 void testStdMap()
@@ -204,6 +222,7 @@ int main (int, char **)
     // testCommon();
     // testCommonList();
     // testAllocOutOfMaxSize(); // должна быть ошибка
+    // testAllocPrettyListWith20AllocElement();
 
     testStdMap();
     testAllocMap();
