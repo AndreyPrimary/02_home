@@ -3,29 +3,34 @@
 #include <iostream>
 #include <memory>
 
-template <typename T>
+template <typename T, int S = 10>
 struct MyPrettyAllocator {
-  using value_type = T;
-  std::size_t allocated_size;
-  std::size_t reserv_size;
-  char* pMemory = nullptr;
+    using value_type = T;
+    std::size_t allocated_size;
+    std::size_t reserv_size = S;
+    char* pMemory = nullptr;
 
-  MyPrettyAllocator(std::size_t reserv_size = 10) noexcept;
+    MyPrettyAllocator() noexcept;
 
-  ~MyPrettyAllocator();
+    ~MyPrettyAllocator();
 
-  template <typename U> MyPrettyAllocator (const MyPrettyAllocator<U>&) noexcept;
+    template <typename U> MyPrettyAllocator (const MyPrettyAllocator<U>&) noexcept;
 
-  std::size_t max_size() const noexcept;
+    std::size_t max_size() const noexcept;
 
-  T* allocate (std::size_t n);
-  
-  void deallocate (T* p, std::size_t n);
+    T* allocate (std::size_t n);
 
-  template<typename U, typename ...Args>
+    void deallocate (T* p, std::size_t n);
+
+    template<typename U, typename ...Args>
     void construct(U *p, Args &&...args);
 
-  void destroy(T *p);
+    void destroy(T *p);
+
+    template<class U>
+    struct rebind {
+        using other = MyPrettyAllocator<U, S>;
+    };
 };
 
 template <class T, class U>
@@ -36,32 +41,32 @@ constexpr bool operator!= (const MyPrettyAllocator<T>&, const MyPrettyAllocator<
 
 // ----------------------
 
-template <typename T>
-MyPrettyAllocator<T>::MyPrettyAllocator(std::size_t reserv_size) noexcept 
-    : allocated_size(0), reserv_size(reserv_size) {
+template <typename T, int S>
+MyPrettyAllocator<T,S>::MyPrettyAllocator() noexcept 
+    : allocated_size(0), reserv_size(S) {
 }
 
-template <typename T>
-MyPrettyAllocator<T>::~MyPrettyAllocator() {
+template <typename T, int S>
+MyPrettyAllocator<T,S>::~MyPrettyAllocator() {
     if (pMemory != nullptr) {
         std::free(pMemory);
         pMemory = nullptr;
     }    
 }
 
-template <typename T>
+template <typename T, int S>
 template <typename U>
-MyPrettyAllocator<T>::MyPrettyAllocator(const MyPrettyAllocator<U>& ) noexcept 
+MyPrettyAllocator<T,S>::MyPrettyAllocator(const MyPrettyAllocator<U>& ) noexcept 
     : allocated_size(0) {
 }
 
-template <typename T>
-std::size_t MyPrettyAllocator<T>::max_size() const noexcept {
+template <typename T, int S>
+std::size_t MyPrettyAllocator<T,S>::max_size() const noexcept {
     return reserv_size;
 }
 
-template <typename T>
-T* MyPrettyAllocator<T>::allocate (std::size_t n) {
+template <typename T, int S>
+T* MyPrettyAllocator<T,S>::allocate (std::size_t n) {
 #ifdef LOG_ALLOC    
     #ifndef USE_PRETTY
             std::cout << "allocate: [n = " << n << "]" << std::endl;
@@ -98,8 +103,8 @@ T* MyPrettyAllocator<T>::allocate (std::size_t n) {
 	return reinterpret_cast<T *>(p);
 }
 
-template <typename T>
-void MyPrettyAllocator<T>::deallocate ([[maybe_unused]] T* p, [[maybe_unused]] std::size_t n) {
+template <typename T, int S>
+void MyPrettyAllocator<T,S>::deallocate ([[maybe_unused]] T* p, [[maybe_unused]] std::size_t n) {
 #ifdef LOG_ALLOC
     #ifndef USE_PRETTY
             std::cout << "deallocate: [n  = " << n << "] " << std::endl;
@@ -122,9 +127,9 @@ void MyPrettyAllocator<T>::deallocate ([[maybe_unused]] T* p, [[maybe_unused]] s
     }
 }
 
-template <typename T>
+template <typename T, int S>
 template<typename U, typename ...Args>
-void MyPrettyAllocator<T>::construct(U *p, Args &&...args) {
+void MyPrettyAllocator<T,S>::construct(U *p, Args &&...args) {
 #ifdef LOG_ALLOC
     #ifndef USE_PRETTY
         std::cout << "construct" << std::endl;
@@ -135,8 +140,8 @@ void MyPrettyAllocator<T>::construct(U *p, Args &&...args) {
     new(p) U(std::forward<Args>(args)...);
 }
 
-template <typename T>
-void MyPrettyAllocator<T>::destroy(T *p) {
+template <typename T, int S>
+void MyPrettyAllocator<T,S>::destroy(T *p) {
 #ifdef LOG_ALLOC
     #ifndef USE_PRETTY
         std::cout << "destroy" << std::endl;
@@ -146,6 +151,11 @@ void MyPrettyAllocator<T>::destroy(T *p) {
 #endif
     p->~T();
 }
+
+// template <typename T, typename U>
+// struct MyPrettyAllocator<U>::rebind {
+//     typedef MyPrettyAllocator<U> other;
+// };  
 
 template <class T, class U>
 constexpr bool operator== (const MyPrettyAllocator<T>&, const MyPrettyAllocator<U>&) noexcept {
@@ -157,4 +167,7 @@ constexpr bool operator!= (const MyPrettyAllocator<T>&, const MyPrettyAllocator<
 	return false;
 }
 
+
+// template <typename T>
+// struct MyPrettyAllocator<T, 10>;
 
